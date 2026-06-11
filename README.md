@@ -8,11 +8,25 @@ cinématique dans un monde 3D construit avec react-three-fiber (base du projet `
 
 ## Lancer
 
+Prérequis : **Node ≥ 18** (champ `engines` — testé sur Node 20).
+
 ```bash
-npm install
-npm run dev       # http://localhost:5173
-npm run build && npm run preview
+npm install       # ou npm ci pour des versions strictement reproductibles
+npm run dev       # http://localhost:5173 — exposé aussi sur le réseau local (host: true)
+npm run build     # tsc strict + vite build → dist/ 100 % statique
+npm run preview   # sert dist/ en local
 ```
+
+**Aucune dépendance réseau au runtime** : polices auto-hébergées
+(`src/assets/fonts/`, voir `src/styles/fonts.css` et `Text3D.tsx`) — la
+présentation fonctionne hors-ligne et derrière un proxy d'entreprise.
+
+Déploiement : `dist/` est entièrement statique (base `./`) — déposable tel quel
+sur GitHub Pages, Netlify, un bucket… La CI (`.github/workflows/ci.yml`)
+vérifie `npm ci && npm run build` sur chaque PR.
+
+> Note : sur une machine sans GPU (VM, CI), l'éclairage bascule automatiquement
+> sur des lumières classiques — le rendu logiciel casse le PMREM d'`Environment`.
 
 ## Conduite de la présentation (identique à l'original)
 
@@ -52,4 +66,6 @@ Barre de progression en haut, compteur « X / 22 » en haut à droite, flèches 
   `src/components/canvas/zones/`, post-processing Bloom/Vignette/Noise, éclairage
   procédural Lightformers, `AdaptiveDpr` + `PerformanceMonitor`.
 - Identité visuelle de l'original : palette `#FF6B1A / #FFD700 / #00E5FF / #32FF7E` sur
-  fond `#0A0205`, typos Bebas Neue · Space Grotesk · Orbitron (Google Fonts).
+  fond `#0A0205`, typos Bebas Neue · Space Grotesk · Orbitron (auto-hébergées).
+- Bundle découpé en vendors (`three` / `r3f` / `react`) + chunk applicatif léger
+  (`vite.config.ts`, `manualChunks`) pour un cache navigateur efficace.

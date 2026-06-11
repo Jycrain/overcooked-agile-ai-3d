@@ -1,9 +1,10 @@
-import { Edges, Float, Text } from '@react-three/drei'
+import { Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
+import { Text } from '../Text3D'
 
 /** Cycle empirique TRY → FAIL → LEARN → REPEAT en orbite continue */
 function EmpiricalCycle(props: { position: [number, number, number] }) {

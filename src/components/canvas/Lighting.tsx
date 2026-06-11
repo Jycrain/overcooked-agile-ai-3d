@@ -1,7 +1,33 @@
 import { Environment, Lightformer } from '@react-three/drei'
+import { useThree } from '@react-three/fiber'
+import { useMemo } from 'react'
 
 /** Studio nocturne procédural aux couleurs de la cuisine : orange, or, cyan */
 export function Lighting() {
+  const gl = useThree((state) => state.gl)
+
+  // En rendu logiciel (SwiftShader, llvmpipe… : VM, CI, navigateurs sans GPU),
+  // le PMREM de <Environment> produit des NaN → tous les meshes standard
+  // deviennent noirs. On le détecte et on bascule sur des lumières classiques
+  // qui approchent le même studio orange/or/cyan.
+  const softwareRenderer = useMemo(() => {
+    const ctx = gl.getContext()
+    const info = ctx.getExtension('WEBGL_debug_renderer_info')
+    const renderer = info ? String(ctx.getParameter(info.UNMASKED_RENDERER_WEBGL)) : ''
+    return /swiftshader|software|llvmpipe/i.test(renderer)
+  }, [gl])
+
+  if (softwareRenderer) {
+    return (
+      <>
+        <ambientLight intensity={0.55} />
+        <directionalLight position={[5, 3, 1]} intensity={1.6} color="#ff6b1a" />
+        <directionalLight position={[-5, 2, -1]} intensity={1} color="#ffd700" />
+        <directionalLight position={[0, 6, 0]} intensity={0.8} color="#00e5ff" />
+      </>
+    )
+  }
+
   return (
     <>
       <ambientLight intensity={0.3} />
