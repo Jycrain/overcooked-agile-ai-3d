@@ -309,6 +309,117 @@ function Confetti(props: { position: [number, number, number] }) {
   )
 }
 
+/* ───────────────── Passage doré : disruption d'acte 20 → 21 ─────────────────
+   Le pendant « enluminure » de la transition Cyberpunk : un tourbillon de
+   pages de parchemin et deux portails-halos dorés traversés plein cadre.
+   Piloté par la position caméra (hors SlideFade) — n'existe QU'ENTRE les
+   slides 20 et 21, invisible aux stations. */
+
+const PAGE_COUNT = 44
+const GOLDEN_ANGLE = 2.39996
+
+function GoldenPassage() {
+  const root = useRef<THREE.Group>(null!)
+  const pages = useRef<THREE.InstancedMesh>(null!)
+  const halo = useRef<THREE.Group>(null!)
+  const pageMat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: '#f1e8d2',
+        emissive: new THREE.Color('#c98a1b'),
+        emissiveIntensity: 0.55,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0,
+      }),
+    [],
+  )
+  const ringMat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: '#ffd700',
+        emissive: new THREE.Color('#ffd700'),
+        emissiveIntensity: 1.7,
+        toneMapped: false,
+        transparent: true,
+        opacity: 0,
+      }),
+    [],
+  )
+  const glowMat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        color: '#ffd700',
+        transparent: true,
+        opacity: 0,
+        toneMapped: false,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    [],
+  )
+  // distribution déterministe en angle d'or le long du couloir caméra
+  const seeds = useMemo(
+    () =>
+      Array.from({ length: PAGE_COUNT }, (_, i) => ({
+        theta: i * GOLDEN_ANGLE,
+        radius: 2.3 + (i % 5) * 0.45,
+        z: -11 + (i * 22) / PAGE_COUNT,
+        speed: 0.22 + (i % 3) * 0.11,
+        spin: (i % 7) * 0.9,
+        scale: 0.55 + ((i * 37) % 10) / 18,
+      })),
+    [],
+  )
+
+  useFrame(({ camera, clock }) => {
+    const p = (9 - camera.position.z) / SLIDE_SPACING
+    const t = Math.max(0, 1 - Math.abs((p - 19.5) / 0.5))
+    const k = t * t * (3 - 2 * t)
+    root.current.visible = k > 0.02
+    pageMat.opacity = 0.95 * k
+    ringMat.opacity = 0.95 * k
+    glowMat.opacity = 0.14 * k
+    if (!root.current.visible) return
+    const now = clock.elapsedTime
+    for (let i = 0; i < PAGE_COUNT; i++) {
+      const seed = seeds[i]
+      const theta = seed.theta + now * seed.speed
+      dummy.position.set(Math.cos(theta) * seed.radius, Math.sin(theta) * seed.radius, seed.z)
+      dummy.rotation.set(now * 0.8 + seed.spin, theta + Math.PI / 2, 0.35)
+      dummy.scale.setScalar(seed.scale)
+      dummy.updateMatrix()
+      pages.current.setMatrixAt(i, dummy.matrix)
+    }
+    pages.current.instanceMatrix.needsUpdate = true
+    halo.current.rotation.z = now * 0.3
+  })
+
+  // axe du couloir : milieu du rail 20 → 21 (x ≈ 1, y ≈ 1,5, z local +22)
+  return (
+    <group ref={root} position={[1, 1.5, 22]} visible={false}>
+      <instancedMesh ref={pages} args={[undefined, undefined, PAGE_COUNT]} material={pageMat} frustumCulled={false}>
+        <planeGeometry args={[0.62, 0.85]} />
+      </instancedMesh>
+      {/* portail-halo principal, traversé au cœur de la transition */}
+      <group ref={halo} position={[0, 0, -1.3]}>
+        <mesh material={ringMat}>
+          <torusGeometry args={[3.1, 0.1, 12, 96]} />
+        </mesh>
+        <mesh material={glowMat}>
+          <circleGeometry args={[3, 48]} />
+        </mesh>
+      </group>
+      {/* second halo plus loin, dans l'axe d'arrivée vers le Guide */}
+      <mesh material={ringMat} position={[-0.5, 0.05, -6.5]} scale={0.62}>
+        <torusGeometry args={[3.1, 0.1, 12, 96]} />
+      </mesh>
+      <Sparkles count={30} scale={[6, 6, 14]} size={3} speed={0.4} opacity={0.8} color="#ffd700" />
+    </group>
+  )
+}
+
 /**
  * Zone finale (slides 21-22) : le Scrum Guide doré, puis le grand merci
  * SFEIR avec feu d'artifice au clic.
@@ -318,6 +429,9 @@ export function ZoneFinal() {
 
   return (
     <group>
+      {/* disruption dorée de la bascule d'acte 20 → 21 — hors SlideFade,
+          son opacité est pilotée par la position caméra */}
+      <GoldenPassage />
       {/* carte du Scrum Guide à gauche → livre à droite, dégagé de la carte */}
       <SlideFade from={TOTAL_SLIDES - 2}>
         <ScrumGuideBook position={[3.3, 0.9, z(0)]} />
