@@ -1,8 +1,9 @@
-import { Text, useCursor } from '@react-three/drei'
+import { useCursor } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useShow } from '../../../store'
+import { Text } from '../Text3D'
 
 /**
  * Le réseau de neurones du slide 19, porté du canvas 2D vers la 3D :

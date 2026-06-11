@@ -1,10 +1,11 @@
-import { Edges, Float, Sparkles, Text } from '@react-three/drei'
+import { Edges, Float, Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING, TOTAL_SLIDES } from '../../../content/slides.fr'
 import { useShow } from '../../../store'
 import { SlideFade } from '../SlideFade'
+import { Text } from '../Text3D'
 import { starGeometry } from './ZoneLevels'
 
 /** Le Scrum Guide : un beau livre relié — couvertures dorées sur tranche

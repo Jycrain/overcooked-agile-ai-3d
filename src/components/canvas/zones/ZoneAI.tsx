@@ -1,9 +1,10 @@
-import { Edges, Float, Text } from '@react-three/drei'
+import { Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
+import { Text } from '../Text3D'
 
 /** Sol-circuit cyan : une grille luminescente qui pulse */
 function CircuitFloor(props: { position: [number, number, number] }) {
