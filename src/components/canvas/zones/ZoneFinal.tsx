@@ -1,4 +1,4 @@
-import { Edges, Float, Text } from '@react-three/drei'
+import { Edges, Float, Sparkles, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
@@ -7,25 +7,67 @@ import { useShow } from '../../../store'
 import { SlideFade } from '../SlideFade'
 import { starGeometry } from './ZoneLevels'
 
-/** Le Scrum Guide : un livre doré qui lévite, 13 pages suffisent */
+/** Le Scrum Guide : un beau livre relié — couvertures dorées sur tranche
+    ivoire, marque-page, titre composé proprement, poussière d'or autour */
 function ScrumGuideBook(props: { position: [number, number, number] }) {
+  const book = useRef<THREE.Group>(null!)
+
+  useFrame((state) => {
+    book.current.rotation.y = -0.35 + Math.sin(state.clock.elapsedTime * 0.4) * 0.18
+  })
+
   return (
-    <Float speed={1.3} rotationIntensity={0.3} floatIntensity={0.6}>
-      <group position={props.position} rotation={[0.1, -0.4, 0.05]}>
-        <mesh>
-          <boxGeometry args={[1.5, 2, 0.22]} />
-          <meshStandardMaterial color="#1a1000" metalness={0.4} roughness={0.4} />
-          <Edges scale={1.01} color="#ffd700" />
-        </mesh>
-        <Text position={[0, 0.35, 0.13]} fontSize={0.26} color="#ffd700" anchorX="center" letterSpacing={0.08}>
-          SCRUM GUIDE
-        </Text>
-        <Text position={[0, -0.15, 0.13]} fontSize={0.14} color="#ffffff" anchorX="center">
-          13 pages
-        </Text>
-        <Text position={[0, -0.55, 0.13]} fontSize={0.1} color="rgba(255,255,255,0.6)" anchorX="center">
-          scrumguides.org
-        </Text>
+    <Float speed={1.2} rotationIntensity={0.1} floatIntensity={0.5}>
+      <group position={props.position}>
+        <group ref={book} rotation={[0.04, -0.35, 0]}>
+          {/* tranche de pages ivoire, prise entre les couvertures */}
+          <mesh>
+            <boxGeometry args={[1.42, 1.92, 0.16]} />
+            <meshStandardMaterial color="#f1e8d2" roughness={0.85} />
+          </mesh>
+          {/* couvertures avant / arrière */}
+          {[0.12, -0.12].map((cover) => (
+            <mesh key={cover} position={[-0.03, 0, cover]}>
+              <boxGeometry args={[1.56, 2.04, 0.06]} />
+              <meshStandardMaterial color="#1a1000" metalness={0.45} roughness={0.35} />
+              <Edges scale={1.01} color="#ffd700" />
+            </mesh>
+          ))}
+          {/* dos relié */}
+          <mesh position={[-0.79, 0, 0]}>
+            <boxGeometry args={[0.07, 2.04, 0.3]} />
+            <meshStandardMaterial color="#241600" metalness={0.45} roughness={0.35} />
+          </mesh>
+          {/* marque-page doré qui dépasse */}
+          <mesh position={[0.42, -1.1, 0]} rotation={[0, 0, 0.06]}>
+            <boxGeometry args={[0.12, 0.34, 0.02]} />
+            <meshStandardMaterial color="#ffd700" emissive="#c98a1b" emissiveIntensity={0.9} toneMapped={false} />
+          </mesh>
+          {/* face avant : titre composé, filet, références */}
+          <group position={[-0.03, 0, 0.155]}>
+            <Text position={[0, 0.66, 0]} fontSize={0.12} color="#f1e8d2" anchorX="center" letterSpacing={0.42}>
+              THE
+            </Text>
+            <Text position={[0, 0.38, 0]} fontSize={0.27} color="#ffd700" anchorX="center" letterSpacing={0.1}>
+              SCRUM
+            </Text>
+            <Text position={[0, 0.08, 0]} fontSize={0.27} color="#ffd700" anchorX="center" letterSpacing={0.1}>
+              GUIDE
+            </Text>
+            <mesh position={[0, -0.18, 0]}>
+              <boxGeometry args={[1.05, 0.012, 0.005]} />
+              <meshStandardMaterial color="#ffd700" emissive="#ffd700" emissiveIntensity={0.9} toneMapped={false} />
+            </mesh>
+            <Text position={[0, -0.4, 0]} fontSize={0.12} color="#ffffff" anchorX="center">
+              13 pages
+            </Text>
+            <Text position={[0, -0.64, 0]} fontSize={0.09} color="#bfae8a" anchorX="center" letterSpacing={0.06}>
+              scrumguides.org
+            </Text>
+          </group>
+        </group>
+        {/* poussière dorée en suspension */}
+        <Sparkles count={20} scale={[2.6, 3, 1.6]} size={2.4} speed={0.3} opacity={0.65} color="#ffd700" />
       </group>
     </Float>
   )
@@ -275,9 +317,9 @@ export function ZoneFinal() {
 
   return (
     <group>
-      {/* carte du Scrum Guide à gauche → livre à droite */}
+      {/* carte du Scrum Guide à gauche → livre à droite, dégagé de la carte */}
       <SlideFade from={TOTAL_SLIDES - 2}>
-        <ScrumGuideBook position={[2.6, 0.9, z(0)]} />
+        <ScrumGuideBook position={[3.3, 0.9, z(0)]} />
       </SlideFade>
       <group position={[0, 0.8, z(1)]}>
         {/* le « MERCI À TOUS » est porté par l'overlay ; la 3D orchestre le bouquet final :

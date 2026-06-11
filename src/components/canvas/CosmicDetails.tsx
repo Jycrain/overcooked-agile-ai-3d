@@ -206,9 +206,10 @@ export function CosmicDetails() {
         const highSide = cardOnRight ? -1 : 1
         const first = Math.floor(rand() * PROPS.length)
         const second = (first + 1 + Math.floor(rand() * (PROPS.length - 1))) % PROPS.length
+        // props abaissés dans le cadre (fov 45 : au-delà de y ≈ 3,5 ils sortaient du champ)
         const left = {
           Prop: PROPS[first],
-          pos: [highSide * (5.6 + rand() * 1.4), 2.4 + rand() * 2, -(3 + rand() * 3)] as [number, number, number],
+          pos: [highSide * (5.6 + rand() * 1.4), 1.7 + rand() * 1.1, -(3 + rand() * 3)] as [number, number, number],
           seed: rand(),
         }
         const right = {
@@ -217,7 +218,7 @@ export function CosmicDetails() {
           seed: rand(),
         }
         // une étoile filante un slide sur trois, en haut du cadre
-        const shooting = i % 3 === 1 ? { pos: [rand() * 4 - 2, 4.6, -6] as [number, number, number], seed: rand() } : null
+        const shooting = i % 3 === 1 ? { pos: [rand() * 4 - 2, 3.3, -6] as [number, number, number], seed: rand() } : null
         return { color, left, right, shooting, z: slideZ(i), index: i }
       }),
     [],

@@ -88,10 +88,12 @@ export function Experience() {
           </SlideFade>
         </ChapterGroup>
 
-        {/* Outils IA en orbite (slide 20, carte à droite → décor à gauche) */}
+        {/* Outils IA en orbite (slide 20, carte à droite → décor à gauche).
+            Le rail caméra est déporté à +2,1 ici : x = -2,7 et échelle 0,8
+            gardent l'orbite entière dans le champ. */}
         <ChapterGroup z={slideZ(19)} range={60}>
           <SlideFade from={19}>
-            <group position={[-2.4, 0.9, 0]} scale={0.9}>
+            <group position={[-2.7, 0.9, 0]} scale={0.8}>
               <OrbitTools />
             </group>
           </SlideFade>
