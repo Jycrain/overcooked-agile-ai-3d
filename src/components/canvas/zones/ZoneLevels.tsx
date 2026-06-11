@@ -1,9 +1,12 @@
 import { Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
+
+const dummy = new THREE.Object3D()
+const voxelColor = new THREE.Color()
 
 /** Oignon stylisé : sphère aplatie dorée + tige — héros du niveau 1-1 */
 function Onion(props: { position: [number, number, number] }) {
@@ -133,6 +136,72 @@ function StarBurst(props: { position: [number, number, number]; count: number })
   )
 }
 
+/* ─────────────── Micro-disruption arcade : bascule d'acte 2 → 3 ───────────────
+   On entre dans le jeu : un essaim de voxels aux couleurs d'Overcooked
+   tourbillonne dans le couloir caméra (rotations crantées par quarts de
+   tour, esprit 8-bit) pendant que l'image se pixelise (Effects).
+   Hors SlideFade — n'existe QU'ENTRE les slides 2 et 3. */
+
+const VOXEL_COUNT = 40
+const VOXEL_PALETTE = ['#ff6b1a', '#ffd700', '#32ff7e', '#00e5ff', '#ff2d55']
+
+function VoxelSwarm() {
+  const root = useRef<THREE.Group>(null!)
+  const mesh = useRef<THREE.InstancedMesh>(null!)
+  const mat = useMemo(() => new THREE.MeshBasicMaterial({ toneMapped: false, transparent: true, opacity: 0 }), [])
+  // distribution déterministe en angle d'or le long du couloir
+  const seeds = useMemo(
+    () =>
+      Array.from({ length: VOXEL_COUNT }, (_, i) => ({
+        theta: i * 2.39996,
+        radius: 1.9 + (i % 4) * 0.55,
+        z: -13 + (i * 26) / VOXEL_COUNT,
+        speed: 0.3 + (i % 3) * 0.15,
+        scale: 0.14 + ((i * 31) % 7) / 40,
+      })),
+    [],
+  )
+
+  useLayoutEffect(() => {
+    for (let i = 0; i < VOXEL_COUNT; i++) {
+      voxelColor.set(VOXEL_PALETTE[i % VOXEL_PALETTE.length])
+      mesh.current.setColorAt(i, voxelColor)
+    }
+    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true
+  }, [])
+
+  useFrame(({ camera, clock }) => {
+    const p = (9 - camera.position.z) / SLIDE_SPACING
+    const t = Math.max(0, 1 - Math.abs((p - 1.5) / 0.45))
+    const k = t * t * (3 - 2 * t)
+    root.current.visible = k > 0.02
+    mat.opacity = 0.95 * k
+    if (!root.current.visible) return
+    const now = clock.elapsedTime
+    for (let i = 0; i < VOXEL_COUNT; i++) {
+      const seed = seeds[i]
+      const theta = seed.theta + now * seed.speed
+      // rotation crantée par quarts de tour — l'esprit 8-bit
+      const step = (Math.floor(now * 2 + i) % 4) * (Math.PI / 2)
+      dummy.position.set(Math.cos(theta) * seed.radius, Math.sin(theta) * seed.radius, seed.z)
+      dummy.rotation.set(step, step * 0.5, 0)
+      dummy.scale.setScalar(seed.scale)
+      dummy.updateMatrix()
+      mesh.current.setMatrixAt(i, dummy.matrix)
+    }
+    mesh.current.instanceMatrix.needsUpdate = true
+  })
+
+  // axe du couloir : milieu du rail 2 → 3 (x ≈ 2, y ≈ 1,5, z local +22)
+  return (
+    <group ref={root} position={[2, 1.5, 22]} visible={false}>
+      <instancedMesh ref={mesh} args={[undefined, undefined, VOXEL_COUNT]} material={mat} frustumCulled={false}>
+        <boxGeometry args={[0.22, 0.22, 0.22]} />
+      </instancedMesh>
+    </group>
+  )
+}
+
 /**
  * Zone des niveaux Overcooked (slides 3 à 6) : oignon du niveau 1-1,
  * minuteurs de cuisine, étoiles de score — un décor par slide le long du rail.
@@ -142,6 +211,9 @@ export function ZoneLevels() {
 
   return (
     <group>
+      {/* micro-disruption arcade de la bascule 2 → 3 — hors SlideFade,
+          son opacité est pilotée par la position caméra */}
+      <VoxelSwarm />
       {/* slide 3 — Soupe à l'oignon (le contenu DOM est centré : décor sur les côtés) */}
       <SlideFade from={2}>
         <Float speed={1.5} rotationIntensity={0.2} floatIntensity={0.5}>
