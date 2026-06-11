@@ -199,26 +199,37 @@ export function CosmicDetails() {
       slides.map((slide, i) => {
         const rand = mulberry32(i * 1013 + 77)
         const color = ACCENT_COLOR[slide.accent]
-        // deux props distincts, un de chaque côté du cadre.
-        // Le prop HAUT va du côté opposé à la carte texte (le titre occupe le
-        // haut du côté de la carte) ; le prop BAS, discret, va sous la carte.
-        const cardOnRight = slide.align === 'center' ? false : slide.align === 'right' || i % 2 === 1
-        const highSide = cardOnRight ? -1 : 1
+        // Deux props, TOUS deux du côté opposé à la carte texte (la carte
+        // occupe jusqu'à 62 % de la largeur à 1024px : aucun placement « sous
+        // la carte » n'est sûr). Pour les slides centrés : un par côté.
+        // Bandes y disjointes (haut / bas) et x ≥ 7,4 : à cette distance le
+        // prop reste à 28-34° d'angle écran, au-delà des décors de zone (≤26°).
+        const cardOnRight = slide.align === 'center' ? null : slide.align === 'right' || i % 2 === 1
+        const sideTop = cardOnRight === null ? (i % 2 ? -1 : 1) : cardOnRight ? -1 : 1
+        const sideBot = cardOnRight === null ? -sideTop : sideTop
         const first = Math.floor(rand() * PROPS.length)
         const second = (first + 1 + Math.floor(rand() * (PROPS.length - 1))) % PROPS.length
-        // props abaissés dans le cadre (fov 45 : au-delà de y ≈ 3,5 ils sortaient du champ)
+        const topX = 7.4 + rand() * 1.0
+        const topY = 2.3 + rand() * 0.8
+        const topZ = -(3.5 + rand() * 1.5)
+        const topSeed = rand()
+        const botX = 7.4 + rand() * 1.0
+        const botY = -1.6 - rand() * 0.8
+        const botZ = -(4 + rand() * 1.5)
+        const botSeed = rand()
         const left = {
           Prop: PROPS[first],
-          pos: [highSide * (5.6 + rand() * 1.4), 1.7 + rand() * 1.1, -(3 + rand() * 3)] as [number, number, number],
-          seed: rand(),
+          pos: [sideTop * topX, topY, topZ] as [number, number, number],
+          seed: topSeed,
         }
         const right = {
           Prop: PROPS[second],
-          pos: [-highSide * (5.6 + rand() * 1.4), -0.4 - rand() * 1.4, -(4 + rand() * 3)] as [number, number, number],
-          seed: rand(),
+          pos: [sideBot * botX, botY, botZ] as [number, number, number],
+          seed: botSeed,
         }
-        // une étoile filante un slide sur trois, en haut du cadre
-        const shooting = i % 3 === 1 ? { pos: [rand() * 4 - 2, 3.3, -6] as [number, number, number], seed: rand() } : null
+        // une étoile filante un slide sur trois, en haut du cadre, côté décor
+        // (son balayage local est ±2,2 : ancrée à ≥3,8 elle reste sur son demi-écran)
+        const shooting = i % 3 === 1 ? { pos: [sideTop * (3.8 + rand() * 1.2), 3.3, -6] as [number, number, number], seed: rand() } : null
         return { color, left, right, shooting, z: slideZ(i), index: i }
       }),
     [],

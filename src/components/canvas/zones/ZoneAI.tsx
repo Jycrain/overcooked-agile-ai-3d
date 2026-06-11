@@ -95,7 +95,7 @@ function CeremonyOrbit(props: { position: [number, number, number] }) {
   ]
 
   useFrame((_, delta) => {
-    group.current.rotation.y += delta * 0.3
+    group.current.rotation.y += delta * 0.18
   })
 
   return (
@@ -106,7 +106,7 @@ function CeremonyOrbit(props: { position: [number, number, number] }) {
         <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={1.5} toneMapped={false} flatShading />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.7, 0.012, 8, 96]} />
+        <torusGeometry args={[2.05, 0.012, 8, 96]} />
         <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={0.9} toneMapped={false} transparent opacity={0.55} />
       </mesh>
       <group ref={group}>
@@ -115,7 +115,7 @@ function CeremonyOrbit(props: { position: [number, number, number] }) {
           return (
             <group
               key={ceremony.label}
-              position={[Math.cos(angle) * 1.7, Math.sin(i * 2.1) * 0.25, Math.sin(angle) * 1.7]}
+              position={[Math.cos(angle) * 2.05, Math.sin(i * 2.1) * 0.12, Math.sin(angle) * 2.05]}
               rotation={[0, -angle + Math.PI / 2, 0]}>
               <mesh>
                 <boxGeometry args={[1, 0.6, 0.06]} />
@@ -306,6 +306,11 @@ export function OrbitTools() {
         <sphereGeometry args={[0.4, 24, 24]} />
         <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={1.8} toneMapped={false} />
       </mesh>
+      {/* coque wireframe autour du noyau — même motif que le cœur IA */}
+      <mesh>
+        <icosahedronGeometry args={[0.7, 1]} />
+        <meshStandardMaterial color="#00e5ff" wireframe emissive="#00e5ff" emissiveIntensity={0.8} toneMapped={false} transparent opacity={0.6} />
+      </mesh>
       <group ref={group}>
         {labels.map((label, i) => {
           const angle = (i / labels.length) * Math.PI * 2
@@ -314,6 +319,7 @@ export function OrbitTools() {
               <mesh>
                 <boxGeometry args={[0.5, 0.5, 0.5]} />
                 <meshStandardMaterial color="#0a3a44" emissive="#00e5ff" emissiveIntensity={0.5} metalness={0.5} roughness={0.3} />
+                <Edges scale={1.02} color="#00e5ff" />
               </mesh>
               <Text position={[0, 0.55, 0]} fontSize={0.16} color="#00e5ff" anchorX="center" letterSpacing={0.12}>
                 {label}

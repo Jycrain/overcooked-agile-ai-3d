@@ -1,4 +1,4 @@
-import { Float } from '@react-three/drei'
+import { Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
@@ -49,8 +49,18 @@ function KitchenTimer(props: { position: [number, number, number]; color: string
         {/* cadran */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.85, 0.85, 0.3, 48]} />
-          <meshStandardMaterial color="#160a10" metalness={0.5} roughness={0.35} />
+          <meshStandardMaterial color="#2a1620" metalness={0.5} roughness={0.4} />
         </mesh>
+        {/* graduations : 12 index, les quarts plus marqués */}
+        {Array.from({ length: 12 }, (_, i) => {
+          const a = (i / 12) * Math.PI * 2
+          return (
+            <mesh key={i} position={[Math.sin(a) * 0.7, Math.cos(a) * 0.7, 0.17]} rotation={[0, 0, -a]}>
+              <boxGeometry args={[0.035, i % 3 === 0 ? 0.14 : 0.08, 0.025]} />
+              <meshStandardMaterial color="#f4ede2" emissive={props.color} emissiveIntensity={0.5} toneMapped={false} />
+            </mesh>
+          )
+        })}
         {/* anneau néon COMPLET autour du cadran */}
         <mesh ref={ring}>
           <torusGeometry args={[0.95, 0.06, 16, 96]} />
@@ -78,7 +88,7 @@ function KitchenTimer(props: { position: [number, number, number]; color: string
   )
 }
 
-/** Géométrie d'étoile à 5 branches extrudée — partagée (score + pluie du final) */
+/** Géométrie d'étoile à 5 branches extrudée — partagée (score, pluie du final, ticket prioritaire) */
 export const starGeometry = (() => {
   const shape = new THREE.Shape()
   const outer = 0.32
@@ -152,13 +162,23 @@ export function ZoneLevels() {
         <group position={[0, 0.4, z(2)]}>
           {/* trois îlots bien séparés en diagonale : chrono haut-centre-droit,
               poste « après » à droite, poste « avant » en bas au centre */}
-          <mesh position={[2.2, -2.7, 1.0]}>
+          {/* poste « avant » : bois brut, liseré rouge — le chaos individuel.
+              y remonté : à -2,7 le poste sortait du cadre par le bas (fov 45) */}
+          <mesh position={[2.2, -1.9, 1.0]}>
             <boxGeometry args={[1.3, 0.7, 1.3]} />
-            <meshStandardMaterial color="#3a1505" roughness={0.6} />
+            <meshStandardMaterial color="#5a2d12" roughness={0.6} />
+            <Edges scale={1.01} color="#ff2d55" />
           </mesh>
+          {/* poste « après » : net, liseré vert, plan de travail propre
+              (légèrement plus petit et surélevé que la face du box, sinon z-fight) */}
           <mesh position={[4.4, -0.2, -1]}>
             <boxGeometry args={[1.4, 0.7, 1.4]} />
-            <meshStandardMaterial color="#0c4a3e" emissive="#32ff7e" emissiveIntensity={0.25} roughness={0.4} />
+            <meshStandardMaterial color="#14342a" emissive="#32ff7e" emissiveIntensity={0.12} roughness={0.4} />
+            <Edges scale={1.01} color="#32ff7e" />
+          </mesh>
+          <mesh position={[4.4, 0.165, -1]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[1.32, 1.32]} />
+            <meshStandardMaterial color="#d9cdb8" roughness={0.5} />
           </mesh>
           <KitchenTimer position={[2.4, 2.5, -1]} color="#ffd700" />
         </group>
