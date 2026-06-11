@@ -59,15 +59,17 @@ function DataRain(props: { position: [number, number, number] }) {
   )
 }
 
-/** Cœur IA : icosaèdre wireframe + noyau pulsant */
+/** Cœur IA : icosaèdre wireframe + noyau pulsant + anneaux holographiques */
 function AICore(props: { position: [number, number, number] }) {
   const outer = useRef<THREE.Mesh>(null!)
   const inner = useRef<THREE.Mesh>(null!)
+  const rings = useRef<THREE.Group>(null!)
 
   useFrame((state, delta) => {
     outer.current.rotation.y += delta * 0.3
     outer.current.rotation.x += delta * 0.12
     inner.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 2.4) * 0.12)
+    rings.current.rotation.z += delta * 0.16
   })
 
   return (
@@ -80,6 +82,142 @@ function AICore(props: { position: [number, number, number] }) {
         <sphereGeometry args={[0.55, 32, 32]} />
         <meshStandardMaterial color="#ffffff" emissive="#00b8d4" emissiveIntensity={2.4} toneMapped={false} />
       </mesh>
+      {/* anneaux holographiques inclinés — le cœur cesse d'être un dôme isolé */}
+      <group ref={rings} rotation={[1.15, 0.2, 0]}>
+        <mesh>
+          <torusGeometry args={[2.1, 0.02, 8, 96]} />
+          <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={1.1} toneMapped={false} transparent opacity={0.45} />
+        </mesh>
+        <mesh rotation={[0.5, 0.4, 0]}>
+          <torusGeometry args={[2.6, 0.014, 8, 96]} />
+          <meshStandardMaterial color="#ff2d55" emissive="#ff2d55" emissiveIntensity={1} toneMapped={false} transparent opacity={0.3} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
+/** Pylône cyber : obélisque néon balisant l'entrée de l'acte IA */
+function CyberPylon(props: { position: [number, number, number]; color: string }) {
+  const bands = useRef<THREE.Group>(null!)
+
+  useFrame((state) => {
+    bands.current.children.forEach((band, i) => {
+      const mat = (band as THREE.Mesh).material as THREE.MeshStandardMaterial
+      mat.emissiveIntensity = 1.2 + Math.sin(state.clock.elapsedTime * 2.4 + i * 2.1) * 0.8
+    })
+  })
+
+  return (
+    <Float speed={1.1} rotationIntensity={0.04} floatIntensity={0.25}>
+      <group position={props.position}>
+        <mesh>
+          <boxGeometry args={[0.55, 4.2, 0.55]} />
+          <meshStandardMaterial color="#0a1016" metalness={0.6} roughness={0.3} />
+          <Edges scale={1.01} color={props.color} />
+        </mesh>
+        {/* bandes d'énergie qui respirent */}
+        <group ref={bands}>
+          {[-1.2, 0.1, 1.4].map((y) => (
+            <mesh key={y} position={[0, y, 0]}>
+              <boxGeometry args={[0.58, 0.16, 0.58]} />
+              <meshStandardMaterial color={props.color} emissive={props.color} emissiveIntensity={1.2} toneMapped={false} />
+            </mesh>
+          ))}
+        </group>
+        {/* balise sommitale */}
+        <mesh position={[0, 2.4, 0]}>
+          <octahedronGeometry args={[0.22, 0]} />
+          <meshStandardMaterial color={props.color} emissive={props.color} emissiveIntensity={2} toneMapped={false} />
+        </mesh>
+      </group>
+    </Float>
+  )
+}
+
+/** Stations des portes néon sur le rail caméra entre les slides 13 et 14
+    (p en slides ; x/y interpolés sur la courbe du rail) */
+const GATE_STATIONS = [
+  { p: 12.3, x: 1.71, y: 1.42 },
+  { p: 12.55, x: 1.94, y: 1.34 },
+  { p: 12.8, x: 2.18, y: 1.26 },
+]
+
+/**
+ * Portes cyber traversées plein cadre pendant la bascule d'acte 13 → 14.
+ * Pilotées à la main par la position caméra (PAS de SlideFade : elles ne
+ * doivent exister QU'ENTRE les deux slides, invisibles aux stations).
+ */
+function CyberGates() {
+  const group = useRef<THREE.Group>(null!)
+  const mats = useMemo(
+    () =>
+      GATE_STATIONS.map(() => ({
+        frame: new THREE.MeshStandardMaterial({
+          color: '#00e5ff',
+          emissive: new THREE.Color('#00e5ff'),
+          emissiveIntensity: 1.6,
+          toneMapped: false,
+          transparent: true,
+          opacity: 0,
+        }),
+        accent: new THREE.MeshStandardMaterial({
+          color: '#ff2d55',
+          emissive: new THREE.Color('#ff2d55'),
+          emissiveIntensity: 1.8,
+          toneMapped: false,
+          transparent: true,
+          opacity: 0,
+        }),
+      })),
+    [],
+  )
+
+  useFrame(({ camera }) => {
+    const p = (9 - camera.position.z) / SLIDE_SPACING
+    const t = Math.max(0, 1 - Math.abs((p - 12.55) / 0.55))
+    const k = t * t * (3 - 2 * t)
+    group.current.visible = k > 0.02
+    for (const m of mats) {
+      m.frame.opacity = 0.95 * k
+      m.accent.opacity = 0.9 * k
+    }
+  })
+
+  return (
+    <group ref={group} visible={false}>
+      {GATE_STATIONS.map((gate, i) => {
+        // monde → local : la zone est ancrée sur le slide 14 (z monde -338)
+        const zLocal = 9 - SLIDE_SPACING * gate.p + 338
+        return (
+          <group key={gate.p} position={[gate.x, gate.y, zLocal]} rotation={[0, 0, (i - 1) * 0.1]}>
+            {/* cadre néon : l'ouverture (4,6 × 3,2) avale la caméra, parallaxe comprise */}
+            <mesh position={[0, 1.6, 0]} material={mats[i].frame}>
+              <boxGeometry args={[4.7, 0.09, 0.09]} />
+            </mesh>
+            <mesh position={[0, -1.6, 0]} material={mats[i].frame}>
+              <boxGeometry args={[4.7, 0.09, 0.09]} />
+            </mesh>
+            <mesh position={[-2.3, 0, 0]} material={mats[i].frame}>
+              <boxGeometry args={[0.09, 3.2, 0.09]} />
+            </mesh>
+            <mesh position={[2.3, 0, 0]} material={mats[i].frame}>
+              <boxGeometry args={[0.09, 3.2, 0.09]} />
+            </mesh>
+            {/* équerres magenta aux angles */}
+            {[
+              [-2.3, 1.6],
+              [2.3, 1.6],
+              [-2.3, -1.6],
+              [2.3, -1.6],
+            ].map(([x, y]) => (
+              <mesh key={`${x}:${y}`} position={[x, y, 0]} material={mats[i].accent}>
+                <boxGeometry args={[0.2, 0.2, 0.2]} />
+              </mesh>
+            ))}
+          </group>
+        )
+      })}
     </group>
   )
 }
@@ -260,10 +398,16 @@ export function ZoneAI() {
         <CircuitFloor position={[0, -2.2, z(1.5)]} />
         <DataRain position={[0, 0, z(1.5)]} />
       </SlideFade>
-      {/* la carte du slide 14 est centrée : le cœur IA plane au-dessus d'elle */}
+      {/* la carte du slide 14 est centrée : le cœur IA plane au-dessus d'elle,
+          encadré par deux pylônes cyber de part et d'autre */}
       <SlideFade from={13}>
         <AICore position={[0, 3.2, z(0) - 2]} />
+        <CyberPylon position={[-5.2, 0.6, z(0)]} color="#00e5ff" />
+        <CyberPylon position={[5.2, 0.6, z(0)]} color="#ff2d55" />
       </SlideFade>
+      {/* portes néon de la bascule d'acte 13 → 14 — hors SlideFade,
+          leur opacité est pilotée par la position caméra */}
+      <CyberGates />
       {/* slide 15 : satellites-outils en orbite, sur le côté droit (carte à gauche).
           Placé PILE sur le slide 15 — pas entre deux slides, sinon la caméra
           finit par le traverser en plein écran au slide suivant. */}
