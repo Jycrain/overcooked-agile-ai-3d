@@ -160,6 +160,31 @@ function Cloche() {
   )
 }
 
+/** Mug de café fumant — le carburant du retour au travail */
+function CoffeeMug() {
+  return (
+    <group>
+      <mesh>
+        <cylinderGeometry args={[0.3, 0.26, 0.5, 24]} />
+        <meshStandardMaterial color="#e8e2d6" roughness={0.35} metalness={0.05} />
+      </mesh>
+      {/* café */}
+      <mesh position={[0, 0.24, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.26, 24]} />
+        <meshStandardMaterial color="#3a2014" emissive="#5a3018" emissiveIntensity={0.4} roughness={0.6} />
+      </mesh>
+      {/* anse */}
+      <mesh position={[0.36, 0, 0]}>
+        <torusGeometry args={[0.13, 0.035, 8, 20]} />
+        <meshStandardMaterial color="#e8e2d6" roughness={0.35} metalness={0.05} />
+      </mesh>
+      <group position={[0, 0.26, 0]}>
+        <Steam height={1.1} />
+      </group>
+    </group>
+  )
+}
+
 /** Cuillère en bois */
 function WoodenSpoon() {
   return (
@@ -178,7 +203,7 @@ function WoodenSpoon() {
 
 /* ───────────────────────── assemblage par slide ───────────────────────── */
 
-type PropKind = 'pot' | 'pan' | 'panFire' | 'plates' | 'cloche' | 'spoon'
+type PropKind = 'pot' | 'pan' | 'panFire' | 'plates' | 'cloche' | 'spoon' | 'coffee'
 
 const PROP: Record<PropKind, () => ReactElement> = {
   pot: () => <SoupPot />,
@@ -187,6 +212,7 @@ const PROP: Record<PropKind, () => ReactElement> = {
   plates: () => <PlateStack />,
   cloche: () => <Cloche />,
   spoon: () => <WoodenSpoon />,
+  coffee: () => <CoffeeMug />,
 }
 
 interface Placement {
@@ -202,8 +228,9 @@ const PLACEMENTS: Placement[] = [
   // 1 — héro : poêle et cuillère encadrent le titre, en bas du cadre
   { slide: 0, kind: 'pan', pos: [-4.3, -1.1, -2], rotY: 0.6, scale: 1.1 },
   { slide: 0, kind: 'spoon', pos: [4.4, -0.9, -2.5], rotY: -0.4 },
-  // 2 — what is Overcooked : la vignette jeu (ZoneHero) occupe la gauche ; assiettes à droite
-  { slide: 1, kind: 'plates', pos: [4.3, -1.2, -2.5] },
+  // 2 — what is Overcooked : la vignette jeu (ZoneHero) à gauche, la carte à
+  // droite — les assiettes se posent au centre-bas, dans le passage libre
+  { slide: 1, kind: 'plates', pos: [-0.6, -1.35, -1.5] },
   // 3 — soupe à l'oignon : la marmite mijote sous l'oignon
   { slide: 2, kind: 'pot', pos: [-4.6, -1.2, -1], scale: 1.15 },
   // 4 — good game : cloche de service + assiettes
@@ -216,24 +243,23 @@ const PLACEMENTS: Placement[] = [
   // 6 — yeah : cloche levée + cuillère
   { slide: 5, kind: 'cloche', pos: [4.3, -1, -2] },
   { slide: 5, kind: 'spoon', pos: [-4.4, -0.7, -3], rotY: 0.8 },
-  // 7 — back to work : ustensiles posés de part et d'autre
-  { slide: 6, kind: 'pan', pos: [4.5, -1, -2], rotY: -0.5 },
-  { slide: 6, kind: 'spoon', pos: [-4.6, -1.1, -2], rotY: 1.2 },
-  // 8 — empirique : la poêle en feu, TRY → FAIL !
-  { slide: 7, kind: 'panFire', pos: [4.5, -1.2, -1.5], scale: 1.2, rotY: -0.3 },
-  // 9 — brigade : la marmite du service + assiettes prêtes
-  { slide: 8, kind: 'plates', pos: [-4.5, -1.1, -2] },
-  { slide: 8, kind: 'pot', pos: [-5, 1.8, -4.5], scale: 0.8 },
-  // 10 — backlog : la cloche des commandes
+  // 7 — back to work : le café fumant du retour, sous le kanban (ZoneAgile)
+  { slide: 6, kind: 'coffee', pos: [5.2, -1.1, -1.5], scale: 1.15, rotY: -0.4 },
+  // 8 — empirique : la poêle en feu, TRY → FAIL ! — sous le cycle, à gauche (carte à droite)
+  { slide: 7, kind: 'panFire', pos: [-5, -1.35, -1], scale: 1.1, rotY: 0.4 },
+  // 9 — brigade : la carte occupe la gauche — marmite et assiettes passent à droite
+  { slide: 8, kind: 'plates', pos: [4.4, -1.3, -1.5] },
+  { slide: 8, kind: 'pot', pos: [6, 2, -4], scale: 0.8 },
+  // 10 — backlog : la cloche des commandes (carte à droite)
   { slide: 9, kind: 'cloche', pos: [-4.6, -1.2, -1.5], scale: 1.1 },
-  // 11 — user story : assiettes à dresser
-  { slide: 10, kind: 'plates', pos: [4.4, -1.2, -2] },
-  { slide: 10, kind: 'spoon', pos: [-4.7, -0.9, -3], rotY: 0.5 },
-  // 12 — mapping Overcooked↔Scrum : marmite côté cuisine
-  { slide: 11, kind: 'pot', pos: [4.6, -1.2, -2], scale: 0.95 },
-  // 13 — frameworks : poêle + cloche, dernière escale cuisine avant l'IA
-  { slide: 12, kind: 'pan', pos: [-4.5, -1.1, -2], rotY: 0.4 },
-  { slide: 12, kind: 'cloche', pos: [4.5, -1.3, -3], scale: 0.9 },
+  // 11 — user story : assiettes à dresser sous le ticket doré (carte à gauche)
+  { slide: 10, kind: 'plates', pos: [4.6, -1.3, -2] },
+  { slide: 10, kind: 'spoon', pos: [5.6, -0.8, -3.5], rotY: 0.5 },
+  // 12 — mapping Overcooked↔Scrum : marmite sous les maillons (carte à droite)
+  { slide: 11, kind: 'pot', pos: [-5.2, -1.35, -1.5], scale: 0.95 },
+  // 13 — frameworks : poêle + cloche au pied des totems, dernière escale cuisine
+  { slide: 12, kind: 'pan', pos: [3.2, -1.45, -0.5], scale: 0.9, rotY: 0.4 },
+  { slide: 12, kind: 'cloche', pos: [6.2, -1.35, -3], scale: 0.9 },
 ]
 
 export function KitchenDetails() {
