@@ -1,10 +1,11 @@
-import { Edges, Float } from '@react-three/drei'
+import { Billboard, Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
 import { Text } from '../Text3D'
+import { starGeometry } from './ZoneLevels'
 
 /** Cycle empirique TRY → FAIL → LEARN → REPEAT en orbite continue */
 function EmpiricalCycle(props: { position: [number, number, number] }) {
@@ -23,9 +24,13 @@ function EmpiricalCycle(props: { position: [number, number, number] }) {
           const angle = (i / steps.length) * Math.PI * 2
           return (
             <group key={step} position={[Math.cos(angle) * 2.1, 0, Math.sin(angle) * 2.1]}>
-              <Text fontSize={0.42} color={colors[i]} anchorX="center" anchorY="middle" rotation={[0, -angle + Math.PI / 2, 0]}>
-                {step}
-              </Text>
+              {/* Billboard : les labels restent face caméra malgré la rotation
+                  du groupe — sinon ceux du fond s'affichent en miroir */}
+              <Billboard>
+                <Text fontSize={0.42} color={colors[i]} anchorX="center" anchorY="middle">
+                  {step}
+                </Text>
+              </Billboard>
             </group>
           )
         })}
@@ -73,7 +78,36 @@ function Brigade(props: { position: [number, number, number] }) {
   )
 }
 
-/** Tickets de commande dorés dérivant — le backlog priorisé */
+/** Un ticket de commande : face papier, pastille, lignes — comme la file
+    de commandes du jeu. Le ticket prioritaire porte une étoile dorée. */
+function BacklogTicket({ priority = false }: { priority?: boolean }) {
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[0.7, 0.95, 0.03]} />
+        <meshStandardMaterial color="#efe7d8" roughness={0.6} />
+        <Edges scale={1.01} color="#ffd700" />
+      </mesh>
+      <mesh position={[0, 0.18, 0.03]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.16, 0.16, 0.02, 18]} />
+        <meshStandardMaterial color="#ff8c42" emissive="#ff8c42" emissiveIntensity={priority ? 1.2 : 0.7} toneMapped={false} />
+      </mesh>
+      {[-0.12, -0.28].map((y) => (
+        <mesh key={y} position={[0, y, 0.025]}>
+          <boxGeometry args={[0.42, 0.04, 0.01]} />
+          <meshStandardMaterial color="#9a9285" />
+        </mesh>
+      ))}
+      {priority && (
+        <mesh geometry={starGeometry} position={[0, 0.78, 0]} scale={0.55}>
+          <meshStandardMaterial color="#ffd700" emissive="#ffb700" emissiveIntensity={1.5} toneMapped={false} />
+        </mesh>
+      )}
+    </group>
+  )
+}
+
+/** Tickets de commande dérivant en anneau — le backlog priorisé */
 function OrderTickets(props: { position: [number, number, number] }) {
   const group = useRef<THREE.Group>(null!)
 
@@ -86,20 +120,15 @@ function OrderTickets(props: { position: [number, number, number] }) {
 
   return (
     <group position={props.position} ref={group}>
+      {/* le useFrame mute children[i].position.y : chaque ticket reste un
+          enfant direct du groupe (l'étoile vit DANS le ticket prioritaire) */}
       {Array.from({ length: 8 }, (_, i) => {
         const angle = (i / 8) * Math.PI * 2
         const r = 2 + (i % 3) * 0.7
         return (
-          <mesh key={i} position={[Math.cos(angle) * r, 0, Math.sin(angle) * r]} rotation={[0, -angle, 0.06]}>
-            <boxGeometry args={[0.7, 0.95, 0.02]} />
-            <meshStandardMaterial
-              color="#ffd700"
-              emissive="#c98a1b"
-              emissiveIntensity={i === 0 ? 1.4 : 0.3}
-              transparent
-              opacity={0.92}
-            />
-          </mesh>
+          <group key={i} position={[Math.cos(angle) * r, 0, Math.sin(angle) * r]} rotation={[0, -angle, 0.06]}>
+            <BacklogTicket priority={i === 0} />
+          </group>
         )
       })}
     </group>
@@ -195,27 +224,29 @@ function ScrumLinks(props: { position: [number, number, number] }) {
   const group = useRef<THREE.Group>(null!)
   const heart = useRef<THREE.Group>(null!)
 
-  useFrame((state, delta) => {
-    group.current.rotation.y += delta * 0.25
+  useFrame((state) => {
+    // oscillation (pas de tour complet) : l'anneau orange reste toujours
+    // au-dessus du label OVERCOOKED, le cyan au-dessus de SCRUM
+    group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.45) * 0.5
     const beat = 1 + Math.pow(Math.max(0, Math.sin(state.clock.elapsedTime * 2.6)), 3) * 0.35
-    heart.current.scale.setScalar(beat)
+    heart.current.scale.setScalar(beat * 1.2)
   })
 
   return (
     <group position={props.position}>
       <group ref={group}>
-        {/* maillon Overcooked (orange), dans le plan vertical */}
-        <mesh position={[-0.62, 0, 0]}>
+        {/* embriquement par projection : décalés en z (jeu 0,12 aux
+            croisements visuels), les anneaux se chevauchent sans se toucher */}
+        <mesh position={[-0.45, 0, 0.16]} rotation={[0, -0.18, 0]}>
           <torusGeometry args={[0.85, 0.1, 14, 72]} />
           <meshStandardMaterial color="#ff6b1a" emissive="#ff6b1a" emissiveIntensity={1.2} toneMapped={false} metalness={0.3} roughness={0.35} />
         </mesh>
-        {/* maillon Scrum (cyan), perpendiculaire — les deux s'embriquent */}
-        <mesh position={[0.62, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <mesh position={[0.45, 0, -0.16]} rotation={[0, 0.18, 0]}>
           <torusGeometry args={[0.85, 0.1, 14, 72]} />
           <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={1.2} toneMapped={false} metalness={0.3} roughness={0.35} />
         </mesh>
-        {/* le cœur commun, qui pulse au centre de l'embriquement */}
-        <group ref={heart}>
+        {/* le cœur commun pulse devant l'embriquement, bien visible */}
+        <group ref={heart} position={[0, 0, 0.55]}>
           <mesh position={[-0.09, 0.07, 0]}>
             <sphereGeometry args={[0.16, 14, 14]} />
             <meshStandardMaterial color="#ff2d55" emissive="#ff2d55" emissiveIntensity={1.8} toneMapped={false} />
@@ -297,9 +328,11 @@ export function ZoneAgile() {
           <EmpiricalCycle position={[0, 0, 0]} />
         </group>
       </SlideFade>
-      {/* slide 9 — la brigade, bien dégagée à droite de la carte */}
+      {/* slide 9 — la brigade, dégagée à droite de la carte et entière dans
+          le champ : à 1440px (aspect 1,6) le lacet caméra vers le centre
+          rétrécit le bord droit — x = 3,5 garde le panneau DELIVERY TEAM entier */}
       <SlideFade from={8}>
-        <group position={[5, 0.9, z(2)]} scale={0.6} rotation={[0, -0.25, 0]}>
+        <group position={[3.5, 0.9, z(2)]} scale={0.55} rotation={[0, -0.18, 0]}>
           <Brigade position={[0, 0, 0]} />
         </group>
       </SlideFade>

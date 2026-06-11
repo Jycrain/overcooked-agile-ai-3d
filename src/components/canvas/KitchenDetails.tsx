@@ -93,7 +93,7 @@ function FryingPan({ flames = false }: { flames?: boolean }) {
     <group>
       <mesh>
         <cylinderGeometry args={[0.42, 0.38, 0.12, 28]} />
-        <meshStandardMaterial color="#2b2b30" roughness={0.35} metalness={0.7} />
+        <meshStandardMaterial color="#3a3a44" roughness={0.35} metalness={0.7} />
       </mesh>
       <mesh position={[0, 0.062, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.36, 28]} />
@@ -150,7 +150,9 @@ function Cloche() {
       </mesh>
       <mesh position={[0, 0, 0]}>
         <sphereGeometry args={[0.44, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#ffd700" emissive="#c98a1b" emissiveIntensity={0.35} roughness={0.25} metalness={0.75} />
+        {/* metalness modéré : à 0,75 le dôme reflétait l'anneau cyan de
+            l'Environment en taches verdâtres */}
+        <meshStandardMaterial color="#ffd700" emissive="#c98a1b" emissiveIntensity={0.35} roughness={0.35} metalness={0.6} />
       </mesh>
       <mesh position={[0, 0.5, 0]}>
         <sphereGeometry args={[0.07, 14, 14]} />
@@ -237,9 +239,10 @@ const PLACEMENTS: Placement[] = [
   { slide: 3, kind: 'cloche', pos: [-4.2, -1, -2] },
   { slide: 3, kind: 'plates', pos: [4.3, -1.1, -2.5] },
   // 5 — better team : poêle sur le poste « avant », marmite sur le poste « après »
-  // (postes alignés à droite, la carte texte occupant la gauche)
-  { slide: 4, kind: 'pan', pos: [2.2, -1.92, 1.0], scale: 0.85, rotY: 2.6 },
-  { slide: 4, kind: 'pot', pos: [4.4, 0.62, -1], scale: 0.85 },
+  // (postes alignés à droite, la carte texte occupant la gauche).
+  // y calés sur le DESSUS des postes de ZoneLevels (la marmite s'enfonçait dans le plan de travail)
+  { slide: 4, kind: 'pan', pos: [2.2, -1.12, 1.0], scale: 0.85, rotY: 2.6 },
+  { slide: 4, kind: 'pot', pos: [4.4, 0.8, -1], scale: 0.85 },
   // 6 — yeah : cloche levée + cuillère
   { slide: 5, kind: 'cloche', pos: [4.3, -1, -2] },
   { slide: 5, kind: 'spoon', pos: [-4.4, -0.7, -3], rotY: 0.8 },
@@ -247,16 +250,18 @@ const PLACEMENTS: Placement[] = [
   { slide: 6, kind: 'coffee', pos: [5.2, -1.1, -1.5], scale: 1.15, rotY: -0.4 },
   // 8 — empirique : la poêle en feu, TRY → FAIL ! — sous le cycle, à gauche (carte à droite)
   { slide: 7, kind: 'panFire', pos: [-5, -1.35, -1], scale: 1.1, rotY: 0.4 },
-  // 9 — brigade : la carte occupe la gauche — marmite et assiettes passent à droite
+  // 9 — brigade : la carte occupe la gauche — marmite et assiettes passent à droite,
+  // la marmite bien au-dessus des panneaux (elle « posait » sur le Scrum Master)
   { slide: 8, kind: 'plates', pos: [4.4, -1.3, -1.5] },
-  { slide: 8, kind: 'pot', pos: [6, 2, -4], scale: 0.8 },
+  { slide: 8, kind: 'pot', pos: [6.8, 3.1, -5], scale: 0.8 },
   // 10 — backlog : la cloche des commandes (carte à droite)
   { slide: 9, kind: 'cloche', pos: [-4.6, -1.2, -1.5], scale: 1.1 },
   // 11 — user story : assiettes à dresser sous le ticket doré (carte à gauche)
   { slide: 10, kind: 'plates', pos: [4.6, -1.3, -2] },
   { slide: 10, kind: 'spoon', pos: [5.6, -0.8, -3.5], rotY: 0.5 },
-  // 12 — mapping Overcooked↔Scrum : marmite sous les maillons (carte à droite)
-  { slide: 11, kind: 'pot', pos: [-5.2, -1.35, -1.5], scale: 0.95 },
+  // 12 — mapping Overcooked↔Scrum : marmite à l'écart des maillons (carte à
+  // droite) — sa vapeur traversait l'anneau cyan
+  { slide: 11, kind: 'pot', pos: [-6, -1.5, -2], scale: 0.95 },
   // 13 — frameworks : poêle + cloche au pied des totems, dernière escale cuisine
   { slide: 12, kind: 'pan', pos: [3.2, -1.45, -0.5], scale: 0.9, rotY: 0.4 },
   { slide: 12, kind: 'cloche', pos: [6.2, -1.35, -3], scale: 0.9 },
