@@ -11,7 +11,7 @@ const BURST_COUNT = 2200
 const BURST_CENTER = new THREE.Vector3(0, 1, -2)
 
 /** PRNG mulberry32 — décors galactiques reproductibles d'un rendu à l'autre */
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
   let a = seed + 0x6d2b79f5
   return () => {
     a |= 0
@@ -22,8 +22,9 @@ function mulberry32(seed: number) {
   }
 }
 
-/** Sprite de halo doux (dégradé radial) partagé par nébuleuses, cœurs et comètes */
-const glowTexture = (() => {
+/** Sprite de halo doux (dégradé radial) partagé par nébuleuses, cœurs et
+    comètes — exporté : le bouquet final (ZoneFinal) réutilise le même halo */
+export const glowTexture = (() => {
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = 128
   const ctx = canvas.getContext('2d')!
@@ -84,8 +85,16 @@ const GALAXIES = [
 const GALAXY_STARS = 900
 const GALAXY_ARMS = 3
 
-/** Galaxie spirale en nuage de points : cœur blanc-chaud, bras teintés d'accent */
-function IntroGalaxy({ accent, position, rotation, seed }: (typeof GALAXIES)[number]) {
+export interface GalaxyProps {
+  accent: string
+  position: readonly [number, number, number]
+  rotation: readonly [number, number, number]
+  seed: number
+}
+
+/** Galaxie spirale en nuage de points : cœur blanc-chaud, bras teintés
+    d'accent — exportée : le bouquet final fait revenir les trois galaxies */
+export function IntroGalaxy({ accent, position, rotation, seed }: GalaxyProps) {
   const spin = useRef<THREE.Group>(null!)
 
   const { positions, colors } = useMemo(() => {

@@ -4,7 +4,7 @@ import { GlitchMode, type BloomEffect, type GlitchEffect, type PixelationEffect,
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../content/slides.fr'
-import { prefersReducedMotion, useShow } from '../../store'
+import { finaleState, prefersReducedMotion, useShow } from '../../store'
 
 /** Centres des bascules d'acte, en « slides » (0-based) :
     intro → jeu entre i=1 et i=2 ; cuisine → IA entre i=12 et i=13 ;
@@ -50,9 +50,12 @@ export function Effects() {
       const granularity = Math.round(kGame * 7) * 2
       if (pixel.current.granularity !== granularity) pixel.current.granularity = granularity
     }
-    aberration.set(kAI * 0.006 + kGold * 0.002 + kGame * 0.0015, kAI * 0.0025 + kGold * 0.0008)
-    if (sepia.current) sepia.current.blendMode.opacity.value = kGold * 0.6
-    if (bloom.current) bloom.current.intensity = baseIntensity + kAI * 1.3 + kGold * 1.6 + kGame * 0.8
+    // l'apothéose du bouquet final (slide 22) pousse les mêmes leviers,
+    // pilotée par le temps de la chorégraphie plutôt que par la position
+    const kFinale = finaleState.surge
+    aberration.set(kAI * 0.006 + kGold * 0.002 + kGame * 0.0015 + kFinale * 0.0012, kAI * 0.0025 + kGold * 0.0008)
+    if (sepia.current) sepia.current.blendMode.opacity.value = Math.max(kGold * 0.6, kFinale * 0.3)
+    if (bloom.current) bloom.current.intensity = baseIntensity + kAI * 1.3 + kGold * 1.6 + kGame * 0.8 + kFinale * 1.5
   })
 
   if (prefersReducedMotion) {

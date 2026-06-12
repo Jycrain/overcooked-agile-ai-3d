@@ -59,6 +59,20 @@ export const useShow = create<ShowState>()((set) => ({
 export const prefersReducedMotion =
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/**
+ * Canal temps réel du bouquet final (slide 22) — volontairement HORS zustand :
+ * écrit chaque frame par la chorégraphie (ZoneFinal), lu chaque frame par les
+ * effets (Effects) et la pyrotechnie, sans déclencher de re-render React.
+ */
+export const finaleState = {
+  /** secondes écoulées depuis l'arrivée sur le slide final, -1 hors du slide */
+  tau: -1,
+  /** échelle de temps des particules (ralenti suspendu au pic) */
+  timeScale: 1,
+  /** intensité 0..1 du surge post-processing de l'apothéose */
+  surge: 0,
+}
+
 /** Saute au slide i (0-based) en pilotant le scroll de drei */
 export function jumpToSlide(i: number) {
   const { scrollEl } = useShow.getState()
