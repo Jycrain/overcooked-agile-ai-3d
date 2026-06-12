@@ -15,7 +15,13 @@ export default function App() {
       <Canvas
         dpr={[1, 2]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
-        camera={{ fov: 45, near: 0.1, far: 400, position: [0, 1, 9] }}>
+        camera={{ fov: 45, near: 0.1, far: 400, position: [0, 1, 9] }}
+        onCreated={({ gl }) => {
+          // si le watchdog GPU coupe le contexte (charge additive + bloom à
+          // DPR 2, fréquent sous Safari), preventDefault autorise sa
+          // restauration : un hoquet au lieu d'un écran noir définitif
+          gl.domElement.addEventListener('webglcontextlost', (event) => event.preventDefault())
+        }}>
         <Suspense fallback={null}>
           <Experience />
         </Suspense>

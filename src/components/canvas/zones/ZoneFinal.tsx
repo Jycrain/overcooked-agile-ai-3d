@@ -332,13 +332,15 @@ const FINALE_GALAXIES: GalaxyProps[] = [
   { accent: '#ffd700', position: [0, 16, -38], rotation: [-0.4, 0.1, 0.5], seed: 303 },
 ]
 
+// échelles contenues : 6 voiles additifs plein cadre à DPR 2, c'est la
+// première facture de fillrate du slide final
 const FINALE_NEBULAE = [
-  { color: '#7b4dff', position: [-13, 6, -20] as const, scale: 24 },
-  { color: '#ff2d8a', position: [12, 5, -24] as const, scale: 20 },
-  { color: '#2bb8ff', position: [6, 12, -28] as const, scale: 26 },
-  { color: '#ffb347', position: [-7, 13, -30] as const, scale: 22 },
-  { color: '#19e3c2', position: [0, 4, -18] as const, scale: 16 },
-  { color: '#4d6bff', position: [-2, 18, -34] as const, scale: 30 },
+  { color: '#7b4dff', position: [-13, 6, -20] as const, scale: 19 },
+  { color: '#ff2d8a', position: [12, 5, -24] as const, scale: 16 },
+  { color: '#2bb8ff', position: [6, 12, -28] as const, scale: 21 },
+  { color: '#ffb347', position: [-7, 13, -30] as const, scale: 18 },
+  { color: '#19e3c2', position: [0, 4, -18] as const, scale: 13 },
+  { color: '#4d6bff', position: [-2, 18, -34] as const, scale: 24 },
 ]
 
 function FinaleCosmos() {
@@ -364,8 +366,11 @@ function FinaleCosmos() {
     const k = tau < 0 ? 0 : THREE.MathUtils.smoothstep(tau, 0, P_COSMOS)
     galaxies.current.scale.setScalar(Math.max(0.001, k))
     galaxies.current.rotation.y += delta * 0.01 * finaleState.timeScale
+    // en qualité dégradée (PerformanceMonitor), les voiles s'estompent :
+    // c'est le premier poste de fillrate du final
+    const nebulaBase = useShow.getState().quality === 'high' ? 0.06 : 0.03
     nebulaMats.forEach((mat, i) => {
-      mat.opacity = tau < 0 ? 0 : 0.075 * THREE.MathUtils.smoothstep(tau, 0.4 + i * 0.3, 3.2 + i * 0.3)
+      mat.opacity = tau < 0 ? 0 : nebulaBase * THREE.MathUtils.smoothstep(tau, 0.4 + i * 0.3, 3.2 + i * 0.3)
     })
   })
 
