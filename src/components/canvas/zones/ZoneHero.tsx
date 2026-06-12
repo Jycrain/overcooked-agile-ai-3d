@@ -5,6 +5,24 @@ import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
 
+/** Damier procédural du plan de travail — clin d'œil Overcooked, déterministe */
+const checkerTexture = (() => {
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = 64
+  const ctx = canvas.getContext('2d')!
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 8; x++) {
+      ctx.fillStyle = (x + y) % 2 ? '#b9a98f' : '#d9cdb8'
+      ctx.fillRect(x * 8, y * 8, 8, 8)
+    }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.magFilter = THREE.NearestFilter
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+  texture.repeat.set(2, 1.25)
+  return texture
+})()
+
 /**
  * Toque de chef modelée : bandeau cylindrique cerclé d'un liseré doré,
  * bouffant en grappe de sphères — lisible au premier regard, rotation lente.
@@ -152,7 +170,7 @@ function GameKitchenVignette() {
       </mesh>
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2.4, 1.5]} />
-        <meshStandardMaterial color="#d9cdb8" roughness={0.5} />
+        <meshStandardMaterial map={checkerTexture} roughness={0.5} />
       </mesh>
       {/* planche à découper + légumes taillés */}
       <group position={[-0.55, 0.05, 0.15]} rotation={[0, 0.3, 0]}>

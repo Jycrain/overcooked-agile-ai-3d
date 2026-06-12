@@ -1,10 +1,14 @@
-import { Edges, Float } from '@react-three/drei'
+import { Billboard, Edges, Float } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
+import { prefersReducedMotion } from '../../../store'
 import { SlideFade } from '../SlideFade'
 import { Text } from '../Text3D'
+
+// cible réutilisée par la LossCurve (getPoint sans cible alloue un Vector3/frame)
+const runnerPos = new THREE.Vector3()
 
 /** Sol-circuit cyan : une grille luminescente qui pulse */
 function CircuitFloor(props: { position: [number, number, number] }) {
@@ -40,7 +44,10 @@ function DataRain(props: { position: [number, number, number] }) {
     return positions
   }, [])
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    // hors de la fenêtre de visibilité du SlideFade (13 → 16) : rien à animer
+    const p = (9 - state.camera.position.z) / SLIDE_SPACING
+    if (p < 12.1 || p > 16.9) return
     const pos = points.current.geometry.attributes.position.array as Float32Array
     for (let i = 0; i < COUNT; i++) {
       pos[i * 3 + 1] -= delta * (0.5 + (i % 5) * 0.2)
@@ -70,6 +77,12 @@ function AICore(props: { position: [number, number, number] }) {
     outer.current.rotation.x += delta * 0.12
     inner.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 2.4) * 0.12)
     rings.current.rotation.z += delta * 0.16
+    // le noyau suit le pointeur — l'IA observe la salle
+    if (!prefersReducedMotion) {
+      inner.current.position.x = THREE.MathUtils.damp(inner.current.position.x, state.pointer.x * 0.5, 4, delta)
+      inner.current.position.y = THREE.MathUtils.damp(inner.current.position.y, state.pointer.y * 0.35, 4, delta)
+      rings.current.rotation.x = THREE.MathUtils.damp(rings.current.rotation.x, 1.15 - state.pointer.y * 0.18, 4, delta)
+    }
   })
 
   return (
@@ -79,7 +92,7 @@ function AICore(props: { position: [number, number, number] }) {
         <meshStandardMaterial color="#00e5ff" wireframe emissive="#00e5ff" emissiveIntensity={1.1} toneMapped={false} />
       </mesh>
       <mesh ref={inner}>
-        <sphereGeometry args={[0.55, 32, 32]} />
+        <sphereGeometry args={[0.55, 16, 16]} />
         <meshStandardMaterial color="#ffffff" emissive="#00b8d4" emissiveIntensity={2.4} toneMapped={false} />
       </mesh>
       {/* anneaux holographiques inclinés — le cœur cesse d'être un dôme isolé */}
@@ -251,18 +264,18 @@ function CeremonyOrbit(props: { position: [number, number, number] }) {
         {ceremonies.map((ceremony, i) => {
           const angle = (i / ceremonies.length) * Math.PI * 2
           return (
-            <group
-              key={ceremony.label}
-              position={[Math.cos(angle) * 2.05, Math.sin(i * 2.1) * 0.12, Math.sin(angle) * 2.05]}
-              rotation={[0, -angle + Math.PI / 2, 0]}>
-              <mesh>
-                <boxGeometry args={[1, 0.6, 0.06]} />
-                <meshStandardMaterial color="#06222a" emissive={ceremony.color} emissiveIntensity={0.3} metalness={0.4} roughness={0.3} transparent opacity={0.92} />
-                <Edges scale={1.02} color={ceremony.color} />
-              </mesh>
-              <Text position={[0, 0, 0.05]} fontSize={0.15} color={ceremony.color} anchorX="center" letterSpacing={0.1}>
-                {ceremony.label}
-              </Text>
+            <group key={ceremony.label} position={[Math.cos(angle) * 2.05, Math.sin(i * 2.1) * 0.12, Math.sin(angle) * 2.05]}>
+              {/* plaque sous Billboard : lisible sur toute l'orbite, jamais de dos */}
+              <Billboard>
+                <mesh>
+                  <boxGeometry args={[1, 0.6, 0.06]} />
+                  <meshStandardMaterial color="#06222a" emissive={ceremony.color} emissiveIntensity={0.3} metalness={0.4} roughness={0.3} transparent opacity={0.92} />
+                  <Edges scale={1.02} color={ceremony.color} />
+                </mesh>
+                <Text position={[0, 0, 0.05]} fontSize={0.15} color={ceremony.color} anchorX="center" letterSpacing={0.1}>
+                  {ceremony.label}
+                </Text>
+              </Billboard>
             </group>
           )
         })}
@@ -285,8 +298,8 @@ function LossCurve(props: { position: [number, number, number] }) {
   }, [])
 
   useFrame((state) => {
-    const p = path.getPoint((state.clock.elapsedTime * 0.12) % 1)
-    runner.current.position.set(p.x, p.y, 0.02)
+    path.getPoint((state.clock.elapsedTime * 0.12) % 1, runnerPos)
+    runner.current.position.set(runnerPos.x, runnerPos.y, 0.02)
   })
 
   return (
@@ -404,6 +417,9 @@ export function ZoneAI() {
         <AICore position={[0, 3.2, z(0) - 2]} />
         <CyberPylon position={[-5.2, 0.6, z(0)]} color="#00e5ff" />
         <CyberPylon position={[5.2, 0.6, z(0)]} color="#ff2d55" />
+        {/* le cœur IA éclaire réellement la scène : rim cyan sur les pylônes,
+            portée limitée pour rester locale */}
+        <pointLight position={[0, 3.2, z(0) - 2]} intensity={20} distance={16} decay={2} color="#00e5ff" />
       </SlideFade>
       {/* portes néon de la bascule d'acte 13 → 14 — hors SlideFade,
           leur opacité est pilotée par la position caméra */}
@@ -447,7 +463,7 @@ export function OrbitTools() {
   return (
     <group>
       <mesh>
-        <sphereGeometry args={[0.4, 24, 24]} />
+        <sphereGeometry args={[0.4, 16, 16]} />
         <meshStandardMaterial color="#00e5ff" emissive="#00e5ff" emissiveIntensity={1.8} toneMapped={false} />
       </mesh>
       {/* coque wireframe autour du noyau — même motif que le cœur IA */}
@@ -465,9 +481,11 @@ export function OrbitTools() {
                 <meshStandardMaterial color="#0a3a44" emissive="#00e5ff" emissiveIntensity={0.5} metalness={0.5} roughness={0.3} />
                 <Edges scale={1.02} color="#00e5ff" />
               </mesh>
-              <Text position={[0, 0.55, 0]} fontSize={0.16} color="#00e5ff" anchorX="center" letterSpacing={0.12}>
-                {label}
-              </Text>
+              <Billboard position={[0, 0.55, 0]}>
+                <Text fontSize={0.2} color="#00e5ff" anchorX="center" letterSpacing={0.12}>
+                  {label}
+                </Text>
+              </Billboard>
             </group>
           )
         })}

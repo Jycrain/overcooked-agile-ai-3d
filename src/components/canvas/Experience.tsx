@@ -35,9 +35,10 @@ export function Experience() {
   return (
     <>
       {/* l'isolation entre slides est assurée par SlideFade ; le brouillard
-          ne sert plus qu'à l'ambiance et à adoucir le fond */}
+          tire les lointains vers un prune chaud — gradient de profondeur
+          au lieu d'un fondu noir plat */}
       <color attach="background" args={['#0a0205']} />
-      <fogExp2 attach="fog" args={['#0a0205', 0.018]} />
+      <fogExp2 attach="fog" args={['#140309', 0.018]} />
       <Lighting />
       <PerfGuards />
       <Stars radius={170} depth={260} count={3000} factor={5} saturation={0.5} fade speed={0.5} />

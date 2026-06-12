@@ -25,6 +25,8 @@ function Steam({ height = 1.6 }: { height?: number }) {
   }, [height])
 
   useFrame((state, delta) => {
+    // slide fondu (SlideFade coupe visible) : inutile de recalculer la vapeur
+    for (let o: THREE.Object3D | null = points.current; o; o = o.parent) if (!o.visible) return
     const pos = points.current.geometry.attributes.position.array as Float32Array
     for (let i = 0; i < STEAM_COUNT; i++) {
       pos[i * 3 + 1] += delta * (0.25 + seeds[i] * 0.3)
@@ -102,6 +104,23 @@ function FryingPan({ flames = false }: { flames?: boolean }) {
       {/* manche */}
       <mesh position={[0.62, 0.03, 0]} rotation={[0, 0, -0.08]}>
         <boxGeometry args={[0.5, 0.06, 0.09]} />
+        <meshStandardMaterial color="#1d1d22" roughness={0.5} metalness={0.5} />
+      </mesh>
+      {/* rebord évasé — la silhouette d'ustensile pro */}
+      <mesh position={[0, 0.06, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.42, 0.022, 10, 36]} />
+        <meshStandardMaterial color="#4a4a55" metalness={0.8} roughness={0.3} />
+      </mesh>
+      {/* rivets de fixation du manche */}
+      {[0.035, -0.035].map((z) => (
+        <mesh key={z} position={[0.4, 0.07, z]}>
+          <sphereGeometry args={[0.022, 10, 10]} />
+          <meshStandardMaterial color="#9aa0ad" metalness={0.9} roughness={0.25} />
+        </mesh>
+      ))}
+      {/* trou d'accroche au bout du manche */}
+      <mesh position={[0.9, 0.035, 0]}>
+        <torusGeometry args={[0.045, 0.016, 8, 16]} />
         <meshStandardMaterial color="#1d1d22" roughness={0.5} metalness={0.5} />
       </mesh>
       {flames && (

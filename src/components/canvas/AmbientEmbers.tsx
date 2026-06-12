@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { useShow } from '../../store'
+import { mulberry32 } from './IntroSequence'
 
 const COUNT = 700
 
@@ -16,13 +17,24 @@ export function AmbientEmbers() {
   const data = useMemo(() => {
     const positions = new Float32Array(COUNT * 3)
     const speeds = new Float32Array(COUNT)
+    // braises bicolores : orange → or, piquées d'étincelles roses (1 sur 9) —
+    // le champ permanent raconte la palette entière sans une particule de plus
+    const rand = mulberry32(4321)
+    const colors = new Float32Array(COUNT * 3)
+    const braise = new THREE.Color('#ff6b1a')
+    const or = new THREE.Color('#ffd700')
+    const rose = new THREE.Color('#ff2d55')
+    const tint = new THREE.Color()
     for (let i = 0; i < COUNT; i++) {
       positions[i * 3] = (Math.random() - 0.5) * 26
       positions[i * 3 + 1] = Math.random() * 13 - 5
       positions[i * 3 + 2] = (Math.random() - 0.5) * 34
       speeds[i] = 0.35 + Math.random() * 1.2
+      if (i % 9 === 0) tint.copy(rose)
+      else tint.copy(braise).lerp(or, rand() * 0.8)
+      colors.set([tint.r, tint.g, tint.b], i * 3)
     }
-    return { positions, speeds }
+    return { positions, speeds, colors }
   }, [])
 
   useFrame(({ camera }, delta) => {
@@ -50,10 +62,11 @@ export function AmbientEmbers() {
       <points ref={points}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[data.positions, 3]} />
+          <bufferAttribute attach="attributes-color" args={[data.colors, 3]} />
         </bufferGeometry>
         <pointsMaterial
           size={0.055}
-          color="#ff8c42"
+          vertexColors
           transparent
           opacity={0.55}
           sizeAttenuation
