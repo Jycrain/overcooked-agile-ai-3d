@@ -1,6 +1,6 @@
-import { Billboard, Edges, Float } from '@react-three/drei'
+import { Billboard, Edges, Float, useCursor } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
 import { SlideFade } from '../SlideFade'
@@ -176,24 +176,37 @@ function KanbanBoard(props: { position: [number, number, number] }) {
   )
 }
 
-/** Le ticket User Story doré — la commande la plus précieuse du backlog */
+/** Le ticket User Story doré — la commande la plus précieuse du backlog.
+    Au survol, il se présente face caméra et s'embrase légèrement. */
 function UserStoryTicket(props: { position: [number, number, number] }) {
   const halo = useRef<THREE.Mesh>(null!)
+  const card = useRef<THREE.Group>(null!)
+  const glow = useRef(0)
+  const [hovered, setHovered] = useState(false)
+  useCursor(hovered)
   const lines = ['En tant que [rôle]', 'Je veux [objectif]', 'Afin de [valeur]']
 
-  useFrame((state) => {
-    halo.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 1.8) * 0.06)
+  useFrame((state, delta) => {
+    glow.current = THREE.MathUtils.damp(glow.current, hovered ? 1 : 0, 5, delta)
+    card.current.rotation.y = THREE.MathUtils.damp(card.current.rotation.y, hovered ? 0 : -0.3, 5, delta)
+    // l'échelle porte le pulse ET la surbrillance — l'opacity appartient au SlideFade
+    halo.current.scale.setScalar((1 + Math.sin(state.clock.elapsedTime * 1.8) * 0.06) * (1 + glow.current * 0.35))
   })
 
   return (
     <Float speed={1.4} rotationIntensity={0.18} floatIntensity={0.45}>
-      <group position={props.position} rotation={[0, -0.3, 0.02]}>
+      <group ref={card} position={props.position} rotation={[0, -0.3, 0.02]}>
         {/* halo doré derrière le ticket */}
         <mesh ref={halo} position={[0, 0, -0.06]}>
           <planeGeometry args={[1.9, 2.5]} />
           <meshBasicMaterial color="#ffd700" transparent opacity={0.08} toneMapped={false} blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
-        <mesh>
+        <mesh
+          onPointerOver={(event) => {
+            event.stopPropagation()
+            setHovered(true)
+          }}
+          onPointerOut={() => setHovered(false)}>
           <boxGeometry args={[1.7, 2.3, 0.05]} />
           <meshStandardMaterial color="#2a1d00" metalness={0.45} roughness={0.3} />
           <Edges scale={1.01} color="#ffd700" />
@@ -207,11 +220,11 @@ function UserStoryTicket(props: { position: [number, number, number] }) {
           USER STORY
         </Text>
         {lines.map((line, i) => (
-          <Text key={line} position={[-0.72, 0.42 - i * 0.36, 0.04]} fontSize={0.115} color="#ffffff" anchorX="left">
+          <Text key={line} position={[-0.7, 0.45 - i * 0.42, 0.04]} fontSize={0.15} color="#ffffff" anchorX="left">
             {line}
           </Text>
         ))}
-        <Text position={[0, -0.95, 0.04]} fontSize={0.1} color="#32ff7e" anchorX="center" letterSpacing={0.08}>
+        <Text position={[0, -0.95, 0.04]} fontSize={0.13} color="#32ff7e" anchorX="center" letterSpacing={0.08}>
           DoD · SPRINT GOAL · 3 ÉTOILES
         </Text>
       </group>
@@ -228,8 +241,12 @@ function ScrumLinks(props: { position: [number, number, number] }) {
     // oscillation (pas de tour complet) : l'anneau orange reste toujours
     // au-dessus du label OVERCOOKED, le cyan au-dessus de SCRUM
     group.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.45) * 0.5
-    const beat = 1 + Math.pow(Math.max(0, Math.sin(state.clock.elapsedTime * 2.6)), 3) * 0.35
-    heart.current.scale.setScalar(beat * 1.2)
+    // battement en deux temps (lub-dub) : deux gaussiennes rapprochées,
+    // la seconde plus faible — physiologique, pas métronomique
+    const c = (state.clock.elapsedTime * 1.15) % 1
+    const lub = Math.exp(-Math.pow((c - 0.1) / 0.045, 2))
+    const dub = Math.exp(-Math.pow((c - 0.28) / 0.055, 2)) * 0.5
+    heart.current.scale.setScalar(1.2 * (1 + 0.3 * lub + 0.16 * dub))
   })
 
   return (

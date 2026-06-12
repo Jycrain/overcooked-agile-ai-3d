@@ -51,7 +51,8 @@ const LAYERS: LayerDef[] = [
     name: 'TEST & QA',
     role: 'Test & Quality Assurance — Validation Layer',
     detail: 'Vérifie que la transformation est correcte avant de livrer la sortie.',
-    color: '#ffd700',
+    // cyan de l'acte IA : l'or reste réservé à la valeur livrée (étoiles de score)
+    color: '#00e5ff',
     x: 3,
     nodes: 2,
   },
@@ -74,6 +75,10 @@ const SM_NODE = {
 
 /** Position verticale du Scrum Master (régularisation), au-dessus du réseau */
 const SM_Y = 3.4
+
+// couleurs des phases pré-parsées (color.set(string) re-parse l'hexa chaque frame)
+const FORWARD = new THREE.Color('#00e5ff')
+const BACKPROP = new THREE.Color('#ff2d55')
 
 function nodePositions(layer: LayerDef): THREE.Vector3[] {
   return Array.from({ length: layer.nodes }, (_, i) => {
@@ -112,6 +117,8 @@ function Neuron({
   }, [hovered, name, role, detail, color])
 
   useFrame((state) => {
+    // réseau fondu (SlideFade parent coupe visible) : rien à animer
+    for (let o: THREE.Object3D | null = mesh.current; o; o = o.parent) if (!o.visible) return
     const mat = mesh.current.material as THREE.MeshStandardMaterial
     const wave = Math.max(0, 1 - Math.abs(state.clock.elapsedTime * 4 - pulse.current - position.x - 6) * 0.5)
     mat.emissiveIntensity = (hovered ? 2.4 : 0.9) + wave * 1.6
@@ -127,13 +134,13 @@ function Neuron({
           setHovered(true)
         }}
         onPointerOut={() => setHovered(false)}>
-        <sphereGeometry args={[0.34, 28, 28]} />
+        <sphereGeometry args={[0.34, 16, 16]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.9} toneMapped={false} />
       </mesh>
       {/* halo de surbrillance derrière le neurone survolé */}
       {hovered && (
         <mesh scale={1.7}>
-          <sphereGeometry args={[0.34, 20, 20]} />
+          <sphereGeometry args={[0.34, 12, 12]} />
           <meshBasicMaterial color={color} transparent opacity={0.18} depthWrite={false} />
         </mesh>
       )}
@@ -164,11 +171,13 @@ export function ZoneNeural(props: { position: [number, number, number] }) {
 
   useFrame((state, delta) => {
     pulse.current += delta
+    // réseau fondu (SlideFade parent coupe visible) : rien à animer
+    for (let o: THREE.Object3D | null = lines.current; o; o = o.parent) if (!o.visible) return
     const mat = lines.current.material as THREE.LineBasicMaterial
     const phase = (state.clock.elapsedTime % 12) / 12
     // forward (cyan) → loss (rouge) → backprop (rouge décroissant)
-    if (phase < 0.5) mat.color.set('#00e5ff')
-    else mat.color.set('#ff2d55')
+    if (phase < 0.5) mat.color.copy(FORWARD)
+    else mat.color.copy(BACKPROP)
     mat.opacity = 0.16 + Math.sin(state.clock.elapsedTime * 2.5) * 0.07
   })
 
@@ -194,7 +203,7 @@ export function ZoneNeural(props: { position: [number, number, number] }) {
 
       {/* Scrum Master — régularisation, au-dessus du réseau */}
       <Neuron position={new THREE.Vector3(0, SM_Y, 0)} color={SM_NODE.color} name={SM_NODE.name} role={SM_NODE.role} detail={SM_NODE.detail} pulse={pulse} />
-      <Text position={[0, SM_Y + 0.75, 0]} fontSize={0.26} color={SM_NODE.color} anchorX="center" letterSpacing={0.1}>
+      <Text position={[0, SM_Y + 0.75, 0]} fontSize={0.32} color={SM_NODE.color} anchorX="center" letterSpacing={0.1}>
         SCRUM MASTER (RÉGULARISATION)
       </Text>
     </group>

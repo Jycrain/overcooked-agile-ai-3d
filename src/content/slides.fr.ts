@@ -377,7 +377,7 @@ export const slides: Slide[] = [
     blocks: [
       {
         kind: 'note',
-        text: 'Forward pass = Sprint · Loss = écart au Sprint Goal · Backprop = Rétro · Epoch = Sprint',
+        text: 'Forward pass = exécution du Sprint · Loss = écart au Sprint Goal · Backprop = Rétro · Epoch = Sprint',
       },
     ],
     hint: 'Survolez les neurones pour découvrir leur rôle 🧠',

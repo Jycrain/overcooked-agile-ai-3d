@@ -19,9 +19,13 @@ const P_APOTHEOSE = 15
     ivoire, marque-page, titre composé proprement, poussière d'or autour */
 function ScrumGuideBook(props: { position: [number, number, number] }) {
   const book = useRef<THREE.Group>(null!)
+  const mark = useRef<THREE.Mesh>(null!)
 
   useFrame((state) => {
     book.current.rotation.y = -0.35 + Math.sin(state.clock.elapsedTime * 0.4) * 0.18
+    // le marque-page ondule — fréquences décalées du balancement du livre
+    mark.current.rotation.z = 0.06 + Math.sin(state.clock.elapsedTime * 1.7) * 0.1
+    mark.current.rotation.x = Math.sin(state.clock.elapsedTime * 1.1 + 1.2) * 0.06
   })
 
   return (
@@ -46,8 +50,8 @@ function ScrumGuideBook(props: { position: [number, number, number] }) {
             <boxGeometry args={[0.07, 2.04, 0.3]} />
             <meshStandardMaterial color="#241600" metalness={0.45} roughness={0.35} />
           </mesh>
-          {/* marque-page doré qui dépasse */}
-          <mesh position={[0.42, -1.1, 0]} rotation={[0, 0, 0.06]}>
+          {/* marque-page doré qui dépasse et ondule (rotation pilotée au useFrame) */}
+          <mesh ref={mark} position={[0.42, -1.1, 0]}>
             <boxGeometry args={[0.12, 0.34, 0.02]} />
             <meshStandardMaterial color="#ffd700" emissive="#c98a1b" emissiveIntensity={0.9} toneMapped={false} />
           </mesh>
@@ -76,6 +80,9 @@ function ScrumGuideBook(props: { position: [number, number, number] }) {
         </group>
         {/* poussière dorée en suspension */}
         <Sparkles count={20} scale={[2.6, 3, 1.6]} size={2.4} speed={0.3} opacity={0.65} color="#ffd700" />
+        {/* lueur d'enluminure : le livre est la relique de l'acte V —
+            portée courte pour rester locale */}
+        <pointLight position={[1.4, 1.6, 1.8]} intensity={9} distance={6} decay={2} color="#ffd700" />
       </group>
     </Float>
   )

@@ -3,7 +3,9 @@ import { useFrame } from '@react-three/fiber'
 import { useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { SLIDE_SPACING } from '../../../content/slides.fr'
+import { prefersReducedMotion } from '../../../store'
 import { SlideFade } from '../SlideFade'
+import { Text } from '../Text3D'
 
 const dummy = new THREE.Object3D()
 const voxelColor = new THREE.Color()
@@ -40,10 +42,20 @@ function KitchenTimer(props: { position: [number, number, number]; color: string
   const hand = useRef<THREE.Group>(null!)
   const ring = useRef<THREE.Mesh>(null!)
 
-  useFrame((state, delta) => {
-    hand.current.rotation.z -= delta * 0.8
+  useFrame((state) => {
+    // l'aiguille tic-taque de graduation en graduation (12 pas/tour) avec un
+    // micro-rebond easeOutBack — un VRAI minuteur de cuisine
+    const t = state.clock.elapsedTime
+    if (prefersReducedMotion) {
+      hand.current.rotation.z = -t * 0.8
+    } else {
+      const sec = Math.floor(t)
+      const k = Math.min(1, (t - sec) * 6)
+      const back = 1 + 2.70158 * Math.pow(k - 1, 3) + 1.70158 * Math.pow(k - 1, 2)
+      hand.current.rotation.z = -(sec + back) * (Math.PI / 6)
+    }
     const mat = ring.current.material as THREE.MeshStandardMaterial
-    mat.emissiveIntensity = 1.3 + Math.sin(state.clock.elapsedTime * 3) * 0.4
+    mat.emissiveIntensity = 1.3 + Math.sin(t * 3) * 0.4
   })
 
   return (
@@ -252,6 +264,13 @@ export function ZoneLevels() {
             <planeGeometry args={[1.32, 1.32]} />
             <meshStandardMaterial color="#d9cdb8" roughness={0.5} />
           </mesh>
+          {/* labels plaqués sur les faces avant : le propos se lit sans la carte */}
+          <Text position={[2.2, -1.9, 1.66]} fontSize={0.26} color="#ff2d55" anchorX="center" anchorY="middle" letterSpacing={0.12}>
+            AVANT
+          </Text>
+          <Text position={[4.4, -0.2, -0.28]} fontSize={0.26} color="#32ff7e" anchorX="center" anchorY="middle" letterSpacing={0.12}>
+            APRÈS
+          </Text>
           <KitchenTimer position={[2.4, 2.5, -1]} color="#ffd700" />
         </group>
       </SlideFade>
