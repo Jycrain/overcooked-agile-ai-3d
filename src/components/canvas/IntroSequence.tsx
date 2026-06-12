@@ -147,8 +147,10 @@ export function IntroGalaxy({ accent, position, rotation, seed }: GalaxyProps) {
       <sprite scale={[7, 7, 1]}>
         <spriteMaterial map={glowTexture} color="#fff3da" transparent opacity={0.9} depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
-      <sprite scale={[24, 24, 1]}>
-        <spriteMaterial map={glowTexture} color={accent} transparent opacity={0.22} depthWrite={false} blending={THREE.AdditiveBlending} />
+      {/* halo contenu : à DPR 2, les très grands sprites additifs coûtent
+          cher en fillrate (risque de watchdog GPU sur le slide final) */}
+      <sprite scale={[20, 20, 1]}>
+        <spriteMaterial map={glowTexture} color={accent} transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
       </sprite>
     </group>
   )
